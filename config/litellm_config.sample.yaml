@@ -1,0 +1,200 @@
+# LiteLLM Proxy 配置 (由 start_litellm.sh 引用)
+# 后端: vLLM 单用户模式 @ http://127.0.0.1:18020  （qwen3.8-27B-W4A16 + DFlash2 投机解码）
+#   启动方式: bash ~/qwen-serving/setup/07_start.sh
+#   注意: vLLM 当前 --max-model-len = 200000（CTX=huge, MAX_LEN=200000, KV_MEM=4.4GB），
+#         所以下面 5 个模型别名的上下文元数据统一写 200000。三处必须一致，否则客户端会发超长 prompt 被后端拒：
+#           ① vLLM  --max-model-len 200000
+#           ② litellm  max_input_tokens / max_tokens = 200000（本文件）
+#           ③ Claude Code 客户端窗口（claude-sonnet-4-6 默认即 200k；实测 claude -p "/context" -> 27k/200k）
+#         复核实际运行参数: wsl -d Ubuntu -e bash -lc "ps -eo args | grep 'vllm serve'"
+#         历史档位: 240k(245760) -> 200k -> 230k -> 200k (2026-09-12 17:00 定版，优先保显存余量)
+#   旧的 llama-server 链路（vision_guard:1237 -> llama-server:1235）已不再作为默认后端；
+#   如需回退，把 api_base 改回 http://127.0.0.1:1237/v1 并重启 litellm。
+#   备份: litellm_config.yaml.bak-20260910-vllm
+# 对外: 1234 端口, 统一 OpenAI + Anthropic 格式
+# UI : http://localhost:1234/ui  (登录密码 = master_key, 监控 token 用量)
+
+model_list:
+  - model_name: qwen3-27b
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: http://127.0.0.1:18020/v1
+      api_key: sk-lm-REPLACE_ME
+      max_tokens: 65536
+    # 本地部署无费用，token 用量照常记录；如需展示金额可填价格(每 token)
+    model_info:
+      input_cost_per_token: 0.000002
+      output_cost_per_token: 0.000006
+      # 显式声明能力: 否则 /model/info 全返回 null, 客户端会判定不支持工具调用而禁用 auto mode
+      supports_function_calling: true
+      supports_tool_choice: true
+      supports_parallel_function_calling: true
+      supports_system_messages: true
+      supports_assistant_prefill: true
+      supports_reasoning: true
+      supports_prompt_caching: true
+      supports_response_schema: true
+      supports_native_streaming: true
+      supports_vision: true
+      supports_computer_use: true
+      supports_audio_input: false
+      supports_audio_output: false
+      supports_pdf_input: false
+      supports_web_search: false
+      # 补全上下文窗口元数据: 否则 /v1/models 返回 null, 客户端无法判断模型能力
+      max_input_tokens: 200000
+      max_tokens: 200000
+      max_output_tokens: 32768
+
+  - model_name: claude-3-5-sonnet
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: http://127.0.0.1:18020/v1
+      api_key: sk-lm-REPLACE_ME
+      max_tokens: 65536
+    model_info:
+      input_cost_per_token: 0.000002
+      output_cost_per_token: 0.000006
+      # 显式声明能力: 否则 /model/info 全返回 null, 客户端会判定不支持工具调用而禁用 auto mode
+      supports_function_calling: true
+      supports_tool_choice: true
+      supports_parallel_function_calling: true
+      supports_system_messages: true
+      supports_assistant_prefill: true
+      supports_reasoning: true
+      supports_prompt_caching: true
+      supports_response_schema: true
+      supports_native_streaming: true
+      supports_vision: true
+      supports_computer_use: true
+      supports_audio_input: false
+      supports_audio_output: false
+      supports_pdf_input: false
+      supports_web_search: false
+      # 补全上下文窗口元数据: 否则 /v1/models 返回 null, 客户端无法判断模型能力
+      max_input_tokens: 200000
+      max_tokens: 200000
+      max_output_tokens: 32768
+
+  # 通配: 任何 claude- 开头的模型名(Claude 客户端默认名)都路由到本地模型
+  - model_name: "claude-*"
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: http://127.0.0.1:18020/v1
+      api_key: sk-lm-REPLACE_ME
+      max_tokens: 65536
+    model_info:
+      input_cost_per_token: 0.000002
+      output_cost_per_token: 0.000006
+      # 显式声明能力: 否则 /model/info 全返回 null, 客户端会判定不支持工具调用而禁用 auto mode
+      supports_function_calling: true
+      supports_tool_choice: true
+      supports_parallel_function_calling: true
+      supports_system_messages: true
+      supports_assistant_prefill: true
+      supports_reasoning: true
+      supports_prompt_caching: true
+      supports_response_schema: true
+      supports_native_streaming: true
+      supports_vision: true
+      supports_computer_use: true
+      supports_audio_input: false
+      supports_audio_output: false
+      supports_pdf_input: false
+      supports_web_search: false
+      # 补全上下文窗口元数据: 否则 /v1/models 返回 null, 客户端无法判断模型能力
+      max_input_tokens: 200000
+      max_tokens: 200000
+      max_output_tokens: 32768
+
+  # 客户端常用别名，都指向同一个本地模型
+  - model_name: qwen/qwen3.8-27b
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: http://127.0.0.1:18020/v1
+      api_key: sk-lm-REPLACE_ME
+      max_tokens: 65536
+    model_info:
+      input_cost_per_token: 0.000002
+      output_cost_per_token: 0.000006
+      # 显式声明能力: 否则 /model/info 全返回 null, 客户端会判定不支持工具调用而禁用 auto mode
+      supports_function_calling: true
+      supports_tool_choice: true
+      supports_parallel_function_calling: true
+      supports_system_messages: true
+      supports_assistant_prefill: true
+      supports_reasoning: true
+      supports_prompt_caching: true
+      supports_response_schema: true
+      supports_native_streaming: true
+      supports_vision: true
+      supports_computer_use: true
+      supports_audio_input: false
+      supports_audio_output: false
+      supports_pdf_input: false
+      supports_web_search: false
+      # 补全上下文窗口元数据: 否则 /v1/models 返回 null, 客户端无法判断模型能力
+      max_input_tokens: 200000
+      max_tokens: 200000
+      max_output_tokens: 32768
+
+  - model_name: qwen3.8-27b
+    litellm_params:
+      model: openai/qwen3.8-27b
+      api_base: http://127.0.0.1:18020/v1
+      api_key: sk-lm-REPLACE_ME
+      max_tokens: 65536
+    model_info:
+      input_cost_per_token: 0.000002
+      output_cost_per_token: 0.000006
+      # 显式声明能力: 否则 /model/info 全返回 null, 客户端会判定不支持工具调用而禁用 auto mode
+      supports_function_calling: true
+      supports_tool_choice: true
+      supports_parallel_function_calling: true
+      supports_system_messages: true
+      supports_assistant_prefill: true
+      supports_reasoning: true
+      supports_prompt_caching: true
+      supports_response_schema: true
+      supports_native_streaming: true
+      supports_vision: true
+      supports_computer_use: true
+      supports_audio_input: false
+      supports_audio_output: false
+      supports_pdf_input: false
+      supports_web_search: false
+      # 补全上下文窗口元数据: 否则 /v1/models 返回 null, 客户端无法判断模型能力
+      max_input_tokens: 200000
+      max_tokens: 200000
+      max_output_tokens: 32768
+
+general_settings:
+  master_key: sk-lm-REPLACE_ME
+  # 用量/花费记录到 PostgreSQL，支撑 UI Usage 用量页与 Keys 管理
+  database_url: postgresql://litellm:litellm@localhost:5432/litellm
+  # 把完整请求/响应内容写入 PostgreSQL LiteLLM_SpendLogs.messages / response
+  # （Grafana「实时输入输出瀑布流」面板的数据源）
+  # 注意：必须放在 general_settings 下，litellm 从 general_settings 读取该开关
+  store_prompts_in_spend_logs: true
+
+litellm_settings:
+  drop_params: true
+  num_retries: 0
+  request_timeout: 1800
+  require_auth_for_metrics_endpoint: false
+  # Claude 端点走 chat/completions
+  use_chat_completions_url_for_anthropic_messages: true
+  # Claude Code auto mode 的安全分类器只给 ~64 token 输出预算，推理模型会把预算
+  # 全花在思维链上 -> content 为空 -> 拿不到判决 -> fail-closed 拒绝（表现为"auto 了还停下来问人"）。
+  # 该 hook 只对 max_tokens<=128 的请求注入 chat_template_kwargs={"enable_thinking": false}，
+  # 主 agent（max_tokens 32768）不受影响，思维链照常保留。
+  # ① classifier_no_think: 只对 max_tokens<=128 的分类器请求关掉思维链（见文件头注释）
+  # ② image_history_trim : Claude Code 每轮重发整个历史，图片会累积；
+  #    单请求超过 vLLM 的 --limit-mm-per-prompt count 上限就 400「At most 16 image(s)」。
+  #    该 hook 把最旧的图片块换成文本占位符，使请求能继续走。
+  #    可调: LITELLM_IMG_TRIM_MAX(默认16) / LITELLM_IMG_TRIM_KEEP(默认14) / _DEBUG=1
+  callbacks: ["litellm_automode_fix.classifier_no_think",
+              "litellm_image_history_trim.image_history_trim"]
+  # 同时输出 Prometheus 指标到 /metrics
+  success_callback: ["prometheus"]
+  failure_callback: ["prometheus"]

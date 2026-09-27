@@ -1,0 +1,30 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行时产物 / 本地状态（绝不提交）
+*.log
+*.log.*
+*.pid
+*state.json
+*.pause
+
+# Grafana / Prometheus 的本地数据
+prometheus-data/
+grafana-data/
+grafana.db
+
+# 敏感：本地凭据
+.gh_tok
+.gh_token
+*git-cred*
+.env
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

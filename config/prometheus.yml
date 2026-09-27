@@ -1,0 +1,40 @@
+# Prometheus 配置: 抓取 litellm + GPU + 主机(Windows) 指标
+global:
+  scrape_interval: 10s
+  evaluation_interval: 10s
+
+scrape_configs:
+  - job_name: litellm
+    metrics_path: /metrics
+    bearer_token: sk-lm-REPLACE_ME
+    static_configs:
+      - targets: ['127.0.0.1:1234']
+        labels:
+          service: litellm
+
+  # vLLM 单用户模式自带引擎指标（413 条 vllm:* ：KV 缓存占用、投机解码接受率、TTFT/TPOT 等）
+  # 注意：这里的 18020 是 vLLM 直连端口，与 litellm:1234 的指标互补——
+  #   litellm 侧看「每个请求/每个模型」的用量，vLLM 侧看「引擎内部」的效率
+  - job_name: vllm
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['127.0.0.1:18020']
+        labels:
+          service: vllm
+          model: qwen3.8-27b
+
+  - job_name: gpu
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['127.0.0.1:9400']
+        labels:
+          service: gpu
+
+  # 主机(Windows) CPU / 温度 / 内存 / 磁盘，由 host_exporter.py 提供
+  - job_name: host
+    metrics_path: /metrics
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['127.0.0.1:9401']
+        labels:
+          service: host

@@ -1,0 +1,17 @@
+# 统一行尾：仓库内一律 LF，避免 Windows 作者 + Linux 使用者之间的 CRLF 事故
+* text=auto eol=lf
+
+*.sh    text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+*.txt   text eol=lf
+
+# cmd.exe 需要 CRLF；PowerShell 5.1 需要 BOM 才能正确解析中文
+*.bat   text eol=crlf
+*.ps1   text eol=crlf
+
+*.png   binary
+*.jpg   binary
