@@ -101,7 +101,7 @@ Non-Admin namespace already initialized
 ### `[3/5]` WSL 侧
 
 ```
-wsl.exe -d Ubuntu -e bash -lc "/mnt/c/Users/administrat0r/start_wsl_services_bonsai.sh"
+wsl.exe -d Ubuntu -e bash -lc "/mnt/c/Users/<你的用户名>/start_wsl_services_bonsai.sh"
 ```
 
 按 `-Backend` 选择：

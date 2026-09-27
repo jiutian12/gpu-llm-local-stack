@@ -72,9 +72,14 @@
 #     停止: bash ~/stop_bonsai.sh
 # ============================================================
 
+# ---- 路径参数：Windows 侧用户目录在 WSL 里的挂载点 ----
+# 默认取当前 WSL 用户名；若 Windows 用户名与之不同，请显式导出：
+#   export WINHOME=/mnt/c/Users/<你的Windows用户名>
+WINHOME="${WINHOME:-/mnt/c/Users/${USER:-YOURUSERNAME}}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MON=/home/administrat0r/monitoring
-BONSAI_ROOT=/home/administrat0r/bonsai
+MON=$HOME/monitoring
+BONSAI_ROOT=$HOME/bonsai
 LM_KEY="sk-lm-REPLACE_ME"
 PORT_MODEL=18020
 PORT_LITELLM=1234
@@ -149,7 +154,7 @@ if ! model_ready; then
   # tmux new-session 不继承调用者环境变量，env 必须写进命令串
   tmux new-session -d -s bonsai \
     "NP=$NP PER_CTX=$PER_CTX QUANT=$DEFAULT_QUANT KV4=1 MMPROJ=$MMPROJ PORT=$PORT_MODEL \
-     bash /home/administrat0r/bonsai_start.sh 2>&1 | tee $LOG"
+     bash $HOME/bonsai_start.sh 2>&1 | tee $LOG"
   echo "      已在 tmux session 'bonsai' 中启动（日志: tmux attach -t bonsai）"
 
   echo "      等待就绪（llama.cpp 加载 5.9 GB + KV 分配，约 10-30 秒）..."
@@ -197,10 +202,10 @@ else
   if command -v tmux >/dev/null 2>&1; then
     tmux kill-session -t litellm 2>/dev/null || true
     tmux new-session -d -s litellm \
-      "cd /mnt/c/Users/administrat0r && bash start_litellm.sh 2>&1 | tee /home/administrat0r/.litellm/litellm.log"
+      "cd $WINHOME && bash start_litellm.sh 2>&1 | tee $HOME/.litellm/litellm.log"
     echo "      已在 tmux session 'litellm' 中启动"
   else
-    (cd /mnt/c/Users/administrat0r && nohup bash start_litellm.sh > /home/administrat0r/.litellm/litellm.log 2>&1 &)
+    (cd $WINHOME && nohup bash start_litellm.sh > $HOME/.litellm/litellm.log 2>&1 &)
     echo "      (未装 tmux，退回 nohup 启动)"
   fi
   LT_OK=0
@@ -212,10 +217,10 @@ else
   done
   if [ "$LT_OK" = "1" ]; then
     echo "      ✅ litellm 就绪 (http://127.0.0.1:${PORT_LITELLM})"
-    BASE=$(grep -m1 -oE "api_base: *http://[^ ]*" /mnt/c/Users/administrat0r/litellm_config.yaml 2>/dev/null | awk '{print $2}')
+    BASE=$(grep -m1 -oE "api_base: *http://[^ ]*" $WINHOME/litellm_config.yaml 2>/dev/null | awk '{print $2}')
     [ -n "$BASE" ] && echo "      后端 api_base = ${BASE}"
   else
-    echo "      ⚠️ litellm 未就绪，查看 /home/administrat0r/.litellm/litellm.log"
+    echo "      ⚠️ litellm 未就绪，查看 $HOME/.litellm/litellm.log"
   fi
 fi
 

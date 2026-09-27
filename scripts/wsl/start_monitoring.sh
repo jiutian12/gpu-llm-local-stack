@@ -2,10 +2,15 @@
 # 一键启动监控组件（WSL 侧 + Windows 侧）
 #   WSL 侧    : GPU exporter(9400) + Prometheus(9090) + Grafana(3000) + 瀑布流(9410)
 #   Windows 侧: 主机指标 exporter(9401, CPU/温度/内存/磁盘)
-# 依赖: /home/administrat0r/monitoring/ 下已解压的 prometheus/grafana 与 gpu_exporter.py
+# 依赖: $HOME/monitoring/ 下已解压的 prometheus/grafana 与 gpu_exporter.py
 # 注意: 不要 set -e —— 单个组件失败不应中断后续启动
-MON=/home/administrat0r/monitoring
-CFG=/mnt/c/Users/administrat0r/monitoring_cfg
+# ---- 路径参数：Windows 侧用户目录在 WSL 里的挂载点 ----
+# 默认取当前 WSL 用户名；若 Windows 用户名与之不同，请显式导出：
+#   export WINHOME=/mnt/c/Users/<你的Windows用户名>
+WINHOME="${WINHOME:-/mnt/c/Users/${USER:-YOURUSERNAME}}"
+
+MON=$HOME/monitoring
+CFG=$WINHOME/monitoring_cfg
 PROM_BIN=$MON/prometheus-2.54.1.linux-amd64/prometheus
 GRAFANA_HOME=$MON/grafana-v11.5.2
 
@@ -63,15 +68,15 @@ fi
 echo "[5/5] Windows 主机指标 exporter (端口 9401, CPU/温度/内存/磁盘)..."
 # ⚠️ 9401 必须由 Windows 侧拉起，WSL 内不再尝试调 powershell.exe：
 #    WSL 常驻进程调 Windows 可执行文件会 UtilAcceptVsock 超时挂死（实测 3 分钟只成功 1 次）。
-#    一键启动入口: 双击 C:\Users\administrat0r\start_all.bat
+#    一键启动入口: 双击 C:\Users\YOURUSERNAME\start_all.bat
 #                (或 PowerShell: start_all.ps1)，由 Windows 侧先起 9401 再拉起本脚本。
 # WSL 是镜像网络，Windows 进程 bind 9401 后 WSL 的 127.0.0.1:9401 直接可达，这里只做探测。
 if curl -s -m 6 --noproxy '*' -o /dev/null "http://127.0.0.1:9401/metrics"; then
   echo "      ✅ 9401 已在监听 (Windows 侧)"
 else
-  echo "      ⚠️ 9401 未监听。请在 Windows 侧执行: 双击 C:\\Users\\administrat0r\\start_all.bat"
-  echo "         （或 PowerShell: powershell -NoProfile -ExecutionPolicy Bypass -File C:\\Users\\administrat0r\\start_all.ps1）"
-  echo "         （或单独拉起: C:\\Users\\administrat0r\\monitoring_cfg\\start_host_exporter.bat）"
+  echo "      ⚠️ 9401 未监听。请在 Windows 侧执行: 双击 C:\\Users\\YOURUSERNAME\\start_all.bat"
+  echo "         （或 PowerShell: powershell -NoProfile -ExecutionPolicy Bypass -File C:\\Users\\YOURUSERNAME\\start_all.ps1）"
+  echo "         （或单独拉起: C:\\Users\\YOURUSERNAME\\monitoring_cfg\\start_host_exporter.bat）"
 fi
 
 sleep 6

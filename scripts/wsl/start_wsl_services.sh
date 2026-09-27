@@ -3,7 +3,7 @@
 #  start_wsl_services.sh —— 一键拉起 WSL 侧全部服务
 #
 #  由 Windows 侧 start_all.ps1 调用（也可在 WSL 内单独执行）:
-#      bash /mnt/c/Users/administrat0r/start_wsl_services.sh
+#      bash $WINHOME/start_wsl_services.sh
 #
 #  服务链（按依赖顺序）:
 #      [1] PostgreSQL            5432
@@ -94,9 +94,14 @@
 #     回退（排查时）: VLLM_PREFIX_CACHE_RETENTION_INTERVAL= bash setup/07_start.sh
 # ============================================================
 
+# ---- 路径参数：Windows 侧用户目录在 WSL 里的挂载点 ----
+# 默认取当前 WSL 用户名；若 Windows 用户名与之不同，请显式导出：
+#   export WINHOME=/mnt/c/Users/<你的Windows用户名>
+WINHOME="${WINHOME:-/mnt/c/Users/${USER:-YOURUSERNAME}}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MON=/home/administrat0r/monitoring
-VLLM_DIR=/home/administrat0r/qwen-serving
+MON=$HOME/monitoring
+VLLM_DIR=$HOME/qwen-serving
 LM_KEY="sk-lm-REPLACE_ME"
 PORT_VLLM=18020
 PORT_LITELLM=1234
@@ -223,13 +228,13 @@ if [ "$CODE" = "200" ]; then
 else
   if command -v tmux >/dev/null 2>&1; then
     tmux kill-session -t litellm 2>/dev/null || true
-    # 必须在 /mnt/c/Users/administrat0r 下启动：start_litellm.sh 用 SCRIPT_DIR
+    # 必须在 $WINHOME 下启动：start_litellm.sh 用 SCRIPT_DIR
     # 找同目录的 litellm_config.yaml，换目录会找不到配置
     tmux new-session -d -s litellm \
-      "cd /mnt/c/Users/administrat0r && bash start_litellm.sh 2>&1 | tee /home/administrat0r/.litellm/litellm.log"
+      "cd $WINHOME && bash start_litellm.sh 2>&1 | tee $HOME/.litellm/litellm.log"
     echo "      已在 tmux session 'litellm' 中启动"
   else
-    (cd /mnt/c/Users/administrat0r && nohup bash start_litellm.sh > /home/administrat0r/.litellm/litellm.log 2>&1 &)
+    (cd $WINHOME && nohup bash start_litellm.sh > $HOME/.litellm/litellm.log 2>&1 &)
     echo "      (未装 tmux，退回 nohup 启动)"
   fi
   LT_OK=0
@@ -242,10 +247,10 @@ else
   if [ "$LT_OK" = "1" ]; then
     echo "      ✅ litellm 就绪 (http://127.0.0.1:${PORT_LITELLM})"
     # 顺带确认后端指向的是 vLLM 而不是旧的 vision_guard
-    BASE=$(grep -m1 -oE "api_base: *http://[^ ]*" /mnt/c/Users/administrat0r/litellm_config.yaml 2>/dev/null | awk '{print $2}')
+    BASE=$(grep -m1 -oE "api_base: *http://[^ ]*" $WINHOME/litellm_config.yaml 2>/dev/null | awk '{print $2}')
     [ -n "$BASE" ] && echo "      后端 api_base = ${BASE}"
   else
-    echo "      ⚠️ litellm 未就绪，查看 /home/administrat0r/.litellm/litellm.log"
+    echo "      ⚠️ litellm 未就绪，查看 $HOME/.litellm/litellm.log"
   fi
 fi
 

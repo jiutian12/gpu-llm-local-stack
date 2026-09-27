@@ -133,5 +133,5 @@ PostgreSQL :5432 ◄─────┴──── llm_trace_api :9410（瀑布�
 ## 8. 对外暴露（可选）
 
 局域网其他设备要访问时，用 `open_lan_ports.ps1` / `setup_portproxy.bat`
-把 `1234`（litellm）等端口转发到 Windows 网卡（本机曾用 `192.168.0.86`）。
+把 `1234`（litellm）等端口转发到 Windows 网卡（即本机的局域网地址，如 `192.168.x.x`）。
 GPU 与主机指标的端口**不建议**外放。

@@ -145,15 +145,39 @@ dashboards/ gpu-llm-full-monitor.json  litellm-prod-v2.json
 
 ## 6. 用之前必须改的东西
 
-这些脚本是从真实机器上直接拷出来的，**使用前请替换**：
+**用户路径已经做成用户无关的**（不再硬编码任何用户名），所以大部分情况下不用改：
+
+| 场景 | 写法 | 说明 |
+|---|---|---|
+| PowerShell（`C:\Users\...`） | `$env:USERPROFILE`、`$env:USERNAME` | 自动取当前用户 |
+| bash（`/home/...`） | `$HOME` | 自动取当前用户 |
+| bash（`/mnt/c/Users/...`） | `$WINHOME` | 每个脚本顶部有定义，默认 `/mnt/c/Users/${USER}` |
+| 文档里的示例 | `<你的用户名>` | 纯占位符 |
+
+`$WINHOME` 的定义（各 WSL 脚本顶部已内置）：
+
+```bash
+# 若你的 Windows 用户名与 WSL 用户名不同，先显式导出
+export WINHOME=/mnt/c/Users/<你的Windows用户名>
+```
+
+**真正必须改的**是密钥与数据源：
 
 | 位置 | 占位 | 改成 |
 |---|---|---|
 | `config/prometheus.yml` | `bearer_token: sk-lm-REPLACE_ME` | 你的 litellm master key |
 | `config/litellm_config.sample.yaml` | `master_key: sk-lm-REPLACE_ME` | 你的 key；`database_url` 改成你的 PG |
 | `scripts/wsl/start_wsl_services*.sh` | `LM_KEY="sk-lm-REPLACE_ME"` | 同上 |
-| 所有脚本 | `/mnt/c/Users/administrat0r`、`C:\Users\administrat0r` | 你的用户目录 |
-| `scripts/wsl/start_wsl_services*.sh` | `/home/administrat0r/bonsai`、`~/qwen-serving` 等 | 你的 WSL 路径与权重路径 |
+
+**还要按你的环境调整的**是模型与监控组件的实际路径（这些是部署事实，无法通用化）：
+
+| 位置 | 需要指向 |
+|---|---|
+| `scripts/wsl/start_wsl_services_bonsai.sh` | `BONSAI_ROOT`（GGUF 与 `bonsai_start.sh` 的位置） |
+| `scripts/wsl/start_wsl_services_vllmbonsai.sh` | `VENV`（装了 vLLM + 插件的 venv）、`CKPT`（转换后的 checkpoint） |
+| `scripts/wsl/start_wsl_services.sh` | `VLLM_DIR`（vLLM 服务目录） |
+| `scripts/wsl/start_monitoring.sh` | `MON`（prometheus / grafana 解压目录） |
+| `scripts/windows/start_all.ps1` | `$WIN_PY`（Windows 侧 python）、`$LHM_DIR`（LibreHardwareMonitor） |
 
 另需自备（本仓库不含）：prometheus / grafana 发行包、litellm 的 venv、
 模型权重（Bonsai 2 27B GGUF 或 Qwen3.8-27B W4A16）、LibreHardwareMonitor。

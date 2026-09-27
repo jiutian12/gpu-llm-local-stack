@@ -10,7 +10,7 @@
 #
 #  用法:
 #    双击 start_all.bat                      （默认后端 = bonsai）
-#    或: powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\administrat0r\start_all.ps1
+#    或: powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\<你的用户名>\start_all.ps1
 #
 #  参数:
 #    -Backend   bonsai(默认) | vllm-bonsai | vllm
@@ -83,16 +83,17 @@ $IS_VLLM_BONSAI  = ($Backend -eq 'vllm-bonsai')
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
 
-$WIN_HOME   = 'C:\Users\administrat0r'
+$WIN_HOME   = $env:USERPROFILE                    # 例如 C:\Users\<你的用户名>
+$WIN_MNT    = '/mnt/c/Users/' + $env:USERNAME     # 同一目录在 WSL 里的路径
 $CFG_DIR    = "$WIN_HOME\monitoring_cfg"
 $WIN_PY     = "$WIN_HOME\miniconda3\python.exe"
 $HOST_EXP   = "$CFG_DIR\host_exporter_win.py"
 $WSL_SCRIPT = if ($IS_BONSAI) {
-    '/mnt/c/Users/administrat0r/start_wsl_services_bonsai.sh'
+    "$WIN_MNT/start_wsl_services_bonsai.sh"
 } elseif ($IS_VLLM_BONSAI) {
-    '/mnt/c/Users/administrat0r/start_wsl_services_vllmbonsai.sh'
+    "$WIN_MNT/start_wsl_services_vllmbonsai.sh"
 } else {
-    '/mnt/c/Users/administrat0r/start_wsl_services.sh'
+    "$WIN_MNT/start_wsl_services.sh"
 }
 $LHM_DIR    = "$WIN_HOME\LibreHardwareMonitor"
 $LHM_EXE    = "$LHM_DIR\LibreHardwareMonitor.exe"
@@ -432,7 +433,7 @@ if ($IS_BONSAI -or $IS_VLLM_BONSAI) {
     Write-Step '4/5' ($(if ($IS_BONSAI) { 'Bonsai 服务守护' } else { 'vLLM-Bonsai 服务守护' }) + ': 服务掉了且显存空着就自动拉起')
     $BONSAI_GUARD = "$CFG_DIR\bonsai_guard.ps1"
     # vllm-bonsai 用同一条守护，只是把「重启动作」换成拉起 vLLM 的 WSL 脚本
-    $GUARD_RESTART = if ($IS_VLLM_BONSAI) { '/mnt/c/Users/administrat0r/start_wsl_services_vllmbonsai.sh' } else { '' }
+    $GUARD_RESTART = if ($IS_VLLM_BONSAI) { "$WIN_MNT/start_wsl_services_vllmbonsai.sh" } else { '' }
     if (-not (Test-Path $BONSAI_GUARD)) {
         Write-Host "  [X] 未找到 $BONSAI_GUARD" -ForegroundColor Red
     } elseif ($SkipWsl) {
@@ -565,7 +566,7 @@ if ($bad.Count -gt 0) {
     $sess = if ($IS_BONSAI) { 'bonsai' } elseif ($IS_VLLM_BONSAI) { 'vllmbonsai' } else { 'vllm' }
     Write-Host "  排查: wsl -d Ubuntu -- tmux attach -t $sess     (模型日志)" -ForegroundColor DarkGray
     Write-Host '        wsl -d Ubuntu -- tmux attach -t litellm  (网关日志)' -ForegroundColor DarkGray
-    Write-Host '        wsl -d Ubuntu -- tail -50 /home/administrat0r/monitoring/*.log' -ForegroundColor DarkGray
+    Write-Host '        wsl -d Ubuntu -- tail -50 $HOME/monitoring/*.log' -ForegroundColor DarkGray
 } else {
     Write-Host '  全部就绪' -ForegroundColor Green
 }

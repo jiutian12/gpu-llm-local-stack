@@ -69,7 +69,7 @@ param(
     [int]   $IntervalSec       = 10,
     [int]   $ChecksPerRun      = 5,
     [string]$WslDistro         = 'Ubuntu',
-    [string]$RestartScript     = '/mnt/c/Users/administrat0r/restart_vllm.sh',
+    [string]$RestartScript     = "/mnt/c/Users/$env:USERNAME/restart_vllm.sh",
     [switch]$EnableRestart,
     [switch]$RequireIdle,
     [switch]$Watch,
@@ -77,7 +77,7 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
-$CfgDir   = 'C:\Users\administrat0r\monitoring_cfg'
+$CfgDir   = "$env:USERPROFILE\monitoring_cfg"
 $StateFi  = Join-Path $CfgDir 'gpu_guard_state.json'
 $LogFi    = Join-Path $CfgDir 'gpu_guard.log'
 $Exporter = 'http://127.0.0.1:9401/metrics'     # 主机内存 + D3D 显存

@@ -3,19 +3,24 @@
 #  stop_wsl_services.sh —— 停止 WSL 侧全部服务
 #
 #  由 stop_all.ps1 调用（也可单独执行）:
-#      bash /mnt/c/Users/administrat0r/stop_wsl_services.sh [--with-pg]
+#      bash $WINHOME/stop_wsl_services.sh [--with-pg]
 #
 #  默认保留 PostgreSQL（litellm 的用量数据在里面，重启不值当）。
 #  加 --with-pg 才一并停掉。
 #
 #  幂等: 已停止的会跳过；可反复执行
 # ============================================================
+# ---- 路径参数：Windows 侧用户目录在 WSL 里的挂载点 ----
+# 默认取当前 WSL 用户名；若 Windows 用户名与之不同，请显式导出：
+#   export WINHOME=/mnt/c/Users/<你的Windows用户名>
+WINHOME="${WINHOME:-/mnt/c/Users/${USER:-YOURUSERNAME}}"
+
 set -u
 
 WITH_PG=0
 for a in "$@"; do [ "$a" = "--with-pg" ] && WITH_PG=1; done
 
-MON=/home/administrat0r/monitoring
+MON=$HOME/monitoring
 hr() { echo "------------------------------------------------------------"; }
 
 # 精确匹配杀进程，避免误杀调用链自身（用 [c] 字符类规避自匹配）

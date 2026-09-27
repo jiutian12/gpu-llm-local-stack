@@ -3,7 +3,7 @@
 #
 #  用法:
 #    双击 stop_all.bat
-#    或: powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\administrat0r\stop_all.ps1
+#    或: powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\<你的用户名>\stop_all.ps1
 #
 #  参数:
 #    -WithPostgres  连 PostgreSQL(5432) 一起停（默认保留，用量数据在里面）
@@ -18,7 +18,7 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
-$CFG_DIR = 'C:\Users\administrat0r\monitoring_cfg'
+$CFG_DIR = "$env:USERPROFILE\monitoring_cfg"
 
 Write-Host '============================================================' -ForegroundColor DarkGray
 Write-Host ' GPU + LLM 全栈停止' -ForegroundColor Yellow
@@ -92,7 +92,7 @@ if (-not $wslOk) {
 
 if ($wslOk) {
     # 注意: 不要给 $args 赋值 —— 它是 PowerShell 自动变量
-    $cmd = 'bash /mnt/c/Users/administrat0r/stop_wsl_services.sh'
+    $cmd = "bash /mnt/c/Users/$env:USERNAME/stop_wsl_services.sh"
     if ($WithPostgres) { $cmd = $cmd + ' --with-pg' }
     $wargs = @()
     if ($Distro -ne '') { $wargs += @('-d', $Distro) }

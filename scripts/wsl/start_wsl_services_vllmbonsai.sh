@@ -22,7 +22,7 @@
 #
 #  ============ 实测基线（2026-09-25，RTX 4090 24GB，单卡独占）============
 #
-#  checkpoint : /home/administrat0r/bonsai_vllm_vl （**带视觉**版本）
+#  checkpoint : $HOME/bonsai_vllm_vl （**带视觉**版本）
 #               由 vis_convert.py 生成：文本权重沿用 bonsai_vllm（model.* -> 
 #               model.language_model.*，prism_ternary 的 .scales 一并保留），
 #               视觉塔+投影器从 Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf 解出（Q8_0 -> bf16）
@@ -30,8 +30,8 @@
 #               config: Qwen3_5ForConditionalGeneration + 嵌套 vision_config
 #               ⚠️ 全 333 个视觉张量已对拍原版 W4A16 HF 权重（Qwen3.8-27B-W4A16-AutoRound）
 #                  cosine = 1.0000；mmproj 的权重矩阵**是 reshape 不是转置**（见 vis_convert.py）
-#  旧纯文本 checkpoint 仍保留在 /home/administrat0r/bonsai_vllm（回滚用）
-#  回滚: VLLM_BONSAI_CKPT=/home/administrat0r/bonsai_vllm bash 本脚本
+#  旧纯文本 checkpoint 仍保留在 $HOME/bonsai_vllm（回滚用）
+#  回滚: VLLM_BONSAI_CKPT=$HOME/bonsai_vllm bash 本脚本
 #  视觉自检: 真实照片应能答出物体；判"图是否真进模型"看 prompt_tokens 增量
 #            （+66 = 64 图像 token + vision 起止符）——合成纯色/棋盘图 ViT 会看错，别当判据
 #  插件       : prism_ternary（fraserprice/bonsai-vllm），装在 qwen-serving/venv
@@ -64,10 +64,15 @@
 #  停止: pkill -f '[v]llm serve'  （或 bash stop_all.bat 的 WSL 部分）
 # ============================================================
 
+# ---- 路径参数：Windows 侧用户目录在 WSL 里的挂载点 ----
+# 默认取当前 WSL 用户名；若 Windows 用户名与之不同，请显式导出：
+#   export WINHOME=/mnt/c/Users/<你的Windows用户名>
+WINHOME="${WINHOME:-/mnt/c/Users/${USER:-YOURUSERNAME}}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MON=/home/administrat0r/monitoring
-VENV=/home/administrat0r/qwen-serving/venv
-CKPT="${VLLM_BONSAI_CKPT:-/home/administrat0r/bonsai_vllm_vl}"
+MON=$HOME/monitoring
+VENV=$HOME/qwen-serving/venv
+CKPT="${VLLM_BONSAI_CKPT:-$HOME/bonsai_vllm_vl}"
 LM_KEY="sk-lm-REPLACE_ME"
 PORT_MODEL=18020
 PORT_LITELLM=1234
@@ -121,7 +126,7 @@ TOOL_PARSER="${VLLM_TOOL_PARSER:-qwen3_xml}"
 #     VLLM_MAX_LEN=256000 VLLM_BATCH_TOKENS=3136 VLLM_LONG_PREFILL=1568 bash 本脚本
 BATCH_TOKENS="${VLLM_BATCH_TOKENS:-2048}"
 LONG_PREFILL="${VLLM_LONG_PREFILL:-0}"      # 0 = 不传该 flag（保持 vLLM 默认关闭）
-LOG=/home/administrat0r/vllmbonsai.log
+LOG=$HOME/vllmbonsai.log
 
 hr() { echo "------------------------------------------------------------"; }
 
@@ -272,10 +277,10 @@ else
   if command -v tmux >/dev/null 2>&1; then
     tmux kill-session -t litellm 2>/dev/null || true
     tmux new-session -d -s litellm \
-      "cd /mnt/c/Users/administrat0r && bash start_litellm.sh 2>&1 | tee /home/administrat0r/.litellm/litellm.log"
+      "cd $WINHOME && bash start_litellm.sh 2>&1 | tee $HOME/.litellm/litellm.log"
     echo "      已在 tmux session 'litellm' 中启动"
   else
-    (cd /mnt/c/Users/administrat0r && nohup bash start_litellm.sh > /home/administrat0r/.litellm/litellm.log 2>&1 &)
+    (cd $WINHOME && nohup bash start_litellm.sh > $HOME/.litellm/litellm.log 2>&1 &)
     echo "      (未装 tmux，退回 nohup 启动)"
   fi
   LT_OK=0
@@ -287,10 +292,10 @@ else
   done
   if [ "$LT_OK" = "1" ]; then
     echo "      ✅ litellm 就绪 (http://127.0.0.1:${PORT_LITELLM})"
-    BASE=$(grep -m1 -oE "api_base: *http://[^ ]*" /mnt/c/Users/administrat0r/litellm_config.yaml 2>/dev/null | awk '{print $2}')
+    BASE=$(grep -m1 -oE "api_base: *http://[^ ]*" $WINHOME/litellm_config.yaml 2>/dev/null | awk '{print $2}')
     [ -n "$BASE" ] && echo "      后端 api_base = ${BASE}"
   else
-    echo "      ⚠️ litellm 未就绪，查看 /home/administrat0r/.litellm/litellm.log"
+    echo "      ⚠️ litellm 未就绪，查看 $HOME/.litellm/litellm.log"
   fi
 fi
 

@@ -3,6 +3,11 @@
 # 可在任意目录执行:  bash start_litellm.sh
 # UI 地址: http://localhost:1234/ui   (登录密码 = master_key)
 # 用法:    启动= bash start_litellm.sh   停止= bash stop_litellm.sh
+# ---- 路径参数：Windows 侧用户目录在 WSL 里的挂载点 ----
+# 默认取当前 WSL 用户名；若 Windows 用户名与之不同，请显式导出：
+#   export WINHOME=/mnt/c/Users/<你的Windows用户名>
+WINHOME="${WINHOME:-/mnt/c/Users/${USER:-YOURUSERNAME}}"
+
 set -e
 
 # 定位 litellm 可执行文件（兼容不同 home / 安装位置）
@@ -44,7 +49,7 @@ if ss -ltn 2>/dev/null | grep -q ":${PORT} "; then
   sleep 2
 fi
 
-# 配置文件与脚本同目录（/mnt/c/Users/administrat0r/）
+# 配置文件与脚本同目录（$WINHOME/）
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 自定义回调 litellm_automode_fix.py 就在本目录，保证 litellm 能 import 到

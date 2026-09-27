@@ -92,7 +92,7 @@ param(
     [int]   $ModelPort           = 18020,
     [int]   $GatewayPort         = 1234,
     [string]$WslDistro           = 'Ubuntu',
-    [string]$RestartScript       = '/mnt/c/Users/administrat0r/start_wsl_services_bonsai.sh',
+    [string]$RestartScript       = "/mnt/c/Users/$env:USERNAME/start_wsl_services_bonsai.sh",
     [int]   $ChecksPerRun        = 1,
     [switch]$EnableRestart,
     [switch]$CleanStale,
@@ -102,7 +102,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 
-$CfgDir  = 'C:\Users\administrat0r\monitoring_cfg'
+$CfgDir  = "$env:USERPROFILE\monitoring_cfg"
 $StateFi = Join-Path $CfgDir 'bonsai_guard_state.json'
 $LogFi   = Join-Path $CfgDir 'bonsai_guard.log'
 $PauseFi = Join-Path $CfgDir 'bonsai_guard.pause'
@@ -354,7 +354,7 @@ function Write-StallHint($prog, $g, $stalledFor, $now) {
             Write-Log '      根因: 显存超配 —— 被换出到主机内存的页每次访问都要走 PCIe，prefill 会掉到千分之一。'
         }
     }
-    Write-Log '      处理: bash ~/stop_bonsai.sh && bash /mnt/c/Users/administrat0r/start_wsl_services_bonsai.sh'
+    Write-Log "      处理: bash ~/stop_bonsai.sh && bash /mnt/c/Users/$env:USERNAME/start_wsl_services_bonsai.sh"
     Write-Log '            或 wsl --shutdown 后重跑 start_all.bat'
     Write-Log '      降基线: BONSAI_MMPROJ=0 省 0.59 GiB；BONSAI_NP=2 每路仍 262144、省约 4.5 GiB'
     $state.StallHintAt = $now
