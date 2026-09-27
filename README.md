@@ -123,7 +123,7 @@ Proxy 请求速率、按异常类失败率、延迟均值/中位数、`x-ratelim
 3. **vLLM 显存悬崖**：KV 池不是"越大越好"。空闲 ≥830 MiB 满速 78 t/s，
    掉到 ~440 MiB 就塌到 52 t/s。**调 `--kv-cache-memory` 必须实测解码速度**。
 
-排障清单（21 条）见 [`docs/05-troubleshooting.md`](docs/05-troubleshooting.md)。
+排障清单（32 条）见 [`docs/05-troubleshooting.md`](docs/05-troubleshooting.md)。
 
 ## 5. 目录
 
